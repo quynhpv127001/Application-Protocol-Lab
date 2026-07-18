@@ -15,7 +15,7 @@ HTTP/REST là giao thức và kiểu kiến trúc phổ biến nhất trong giao
 
 ## Cách chạy
 1. Run class `HttpApplication.java`.
-2. Mở file [api.md](api.md) để lấy toàn bộ các câu lệnh cURL mẫu để test trực tiếp trên Terminal hoặc Postman.
+2. Mở file [http.md](http.md) để lấy toàn bộ các câu lệnh cURL mẫu để test trực tiếp trên Terminal hoặc Postman.
 
 ## Cấu trúc
 - `crud`: Các method cơ bản.

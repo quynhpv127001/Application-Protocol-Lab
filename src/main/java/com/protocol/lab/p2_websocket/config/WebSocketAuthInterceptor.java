@@ -21,18 +21,34 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         
         // Xác thực tại frame CONNECT
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            List<String> authorization = accessor.getNativeHeader("Authorization");
-            log.info("WS CONNECT Request with token: {}", authorization);
+            String login = accessor.getLogin();
+            String passcode = accessor.getPasscode();
+            
+            // Nếu STOMP Client truyền qua Headers tuỳ chỉnh (dự phòng)
+            if (login == null && accessor.getNativeHeader("login") != null) {
+                login = accessor.getNativeHeader("login").get(0);
+            }
+            if (passcode == null && accessor.getNativeHeader("passcode") != null) {
+                passcode = accessor.getNativeHeader("passcode").get(0);
+            }
 
-            if (authorization == null || authorization.isEmpty()) {
-                log.error("WebSocket Auth Failed: Token is missing");
-                throw new IllegalArgumentException("Unauthorized WS access!");
+            log.info("WS CONNECT Request - User: {}, Pass: {}", login, passcode);
+
+            if (login == null || login.trim().isEmpty() || passcode == null || passcode.trim().isEmpty()) {
+                log.error("WebSocket Auth Failed: Missing login or passcode");
+                throw new IllegalArgumentException("Unauthorized WS access: Missing credentials!");
             }
             
-            // Ở mô phỏng này, ta dùng luôn token làm Username
-            String token = authorization.get(0);
-            accessor.setUser(() -> token);
-            log.info("WebSocket Authenticated User: {}", token);
+            // Giả lập check DB: Password luôn phải là 123456
+            if (!"123456".equals(passcode)) {
+                log.error("WebSocket Auth Failed: Wrong password");
+                throw new IllegalArgumentException("Unauthorized WS access: Wrong password!");
+            }
+            
+            // Gán Username vào Principal
+            final String finalUsername = login;
+            accessor.setUser(() -> finalUsername);
+            log.info("WebSocket Authenticated User: {}", finalUsername);
         }
         return message;
     }

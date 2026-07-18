@@ -6,7 +6,7 @@
         <h2>⚡ Phase 2: WebSocket & STOMP (Mô phỏng 2 Clients Chat)</h2>
         <p style="font-size: 0.9rem; color: var(--text-secondary);">
             Mô phỏng 2 Client trên cùng 1 giao diện để test tính năng Realtime, Handshake Auth và Room Broadcast (Sử dụng In-Memory Broker).
-            Hãy để cả 2 Client cùng chung 1 tên Room và bắt đầu trò chuyện. Tên bạn nhập ở ô Token sẽ được gán làm Username.
+            Hãy để cả 2 Client cùng chung 1 tên Room và bắt đầu trò chuyện. Auth yêu cầu Username (tùy ý) và Password bắt buộc là "123456".
         </p>
     </div>
 
@@ -18,7 +18,8 @@
                 <span id="statusA" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
             </h3>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <input type="text" id="tokenA" class="form-control" value="Alex" style="flex: 2;" placeholder="Nhập Token (Tên)...">
+                <input type="text" id="usernameA" class="form-control" value="Alex" style="flex: 1;" placeholder="Username">
+                <input type="password" id="passwordA" class="form-control" value="123456" style="flex: 1;" placeholder="Password">
                 <input type="text" id="roomA" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
             </div>
             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -42,7 +43,8 @@
                 <span id="statusB" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
             </h3>
             <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                <input type="text" id="tokenB" class="form-control" value="Bob" style="flex: 2;" placeholder="Nhập Token (Tên)...">
+                <input type="text" id="usernameB" class="form-control" value="Bob" style="flex: 1;" placeholder="Username">
+                <input type="password" id="passwordB" class="form-control" value="123456" style="flex: 1;" placeholder="Password">
                 <input type="text" id="roomB" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
             </div>
             <div style="display: flex; gap: 8px; margin-bottom: 16px;">
@@ -94,10 +96,11 @@
         }
 
         function connectWs(clientId) {
-            const token = document.getElementById('token' + clientId).value;
+            const username = document.getElementById('username' + clientId).value;
+            const password = document.getElementById('password' + clientId).value;
             const room = document.getElementById('room' + clientId).value;
             
-            if (!room) return alert("Vui lòng nhập Tên Room!");
+            if (!username || !password || !room) return alert("Vui lòng nhập đủ Username, Password và Tên Room!");
 
             clients[clientId].room = room;
             
@@ -110,8 +113,10 @@
             document.getElementById('status' + clientId).innerHTML = '🟡 Đang kết nối...';
             document.getElementById('status' + clientId).style.color = '#f59e0b';
 
-            stompClient.connect({ 'Authorization': token }, function (frame) {
-                clients[clientId].username = frame.headers['user-name'] || "Unknown";
+            stompClient.connect({ 'login': username, 'passcode': password }, function (frame) {
+                // frame.headers['user-name'] có thể không trả về hoặc trả về tuỳ config broker, 
+                // ở đây ta lấy luôn username người dùng nhập vì interceptor đã set đúng tên đó
+                clients[clientId].username = username;
 
                 document.getElementById('btnConnect' + clientId).style.display = 'none';
                 document.getElementById('btnDisconnect' + clientId).style.display = 'block';

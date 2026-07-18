@@ -14,7 +14,7 @@ STOMP (Simple Text Oriented Messaging Protocol) là một sub-protocol chạy tr
 ## Cách chạy
 1. Run class chính của Spring Boot (`Application.java`).
 2. Mở trình duyệt truy cập `http://localhost:8080/phase2` để test giao diện chat realtime.
-3. Mở file [api.md](api.md) để lấy code mẫu kết nối (dành cho phía Client) copy và paste.
+3. Mở file [websocket.md](websocket.md) để lấy code mẫu kết nối (dành cho phía Client) copy và paste.
 
 ## Cấu trúc
 - `config/WebSocketConfig.java`: Cấu hình Endpoint `/ws`, STOMP Broker và Heartbeat.
