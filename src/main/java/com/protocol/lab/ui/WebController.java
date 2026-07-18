@@ -9,15 +9,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/")
 public class WebController {
 
-    @GetMapping
-    public String index() {
-        return "redirect:/phase1";
+    @GetMapping({"/", "/phase1"})
+    public String phase1(Model model) {
+        model.addAttribute("title", "Phase 1: HTTP/REST");
+        model.addAttribute("activeTab", "phase1");
+        return "phase1-http";
     }
 
-    @GetMapping("/phase1")
-    public String phase1Http(Model model) {
-        model.addAttribute("activeTab", "phase1");
-        model.addAttribute("title", "Phase 1: HTTP/REST");
-        return "phase1-http";
+    @GetMapping("/phase2")
+    public String phase2(Model model) {
+        model.addAttribute("title", "Phase 2: WebSocket");
+        model.addAttribute("activeTab", "phase2");
+        return "phase2-websocket";
     }
 }

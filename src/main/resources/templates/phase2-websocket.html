@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: main(~{::#pageContent})}">
+<body>
+<div id="pageContent">
+    <div style="margin-bottom: 24px;">
+        <h2>⚡ Phase 2: WebSocket & STOMP (Mô phỏng 2 Clients Chat)</h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary);">
+            Mô phỏng 2 Client trên cùng 1 giao diện để test tính năng Realtime, Handshake Auth và Room Broadcast (Sử dụng In-Memory Broker).
+            Hãy để cả 2 Client cùng chung 1 tên Room và bắt đầu trò chuyện. Tên bạn nhập ở ô Token sẽ được gán làm Username.
+        </p>
+    </div>
+
+    <div class="grid-2">
+        <!-- CLIENT A -->
+        <div class="card" style="border: 2px solid #3b82f6;">
+            <h3 style="color: #3b82f6; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>👤 Client A</span>
+                <span id="statusA" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
+            </h3>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <input type="text" id="tokenA" class="form-control" value="Alex" style="flex: 2;" placeholder="Nhập Token (Tên)...">
+                <input type="text" id="roomA" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="btn" style="background-color: #3b82f6; flex: 1;" id="btnConnectA" onclick="connectWs('A')">Kết nối</button>
+                <button class="btn" style="background-color: #ef4444; flex: 1; display: none;" id="btnDisconnectA" onclick="disconnectWs('A')">Ngắt kết nối</button>
+            </div>
+            
+            <div id="chatAreaA" style="height: 300px; background-color: #0f172a; border-radius: 8px; padding: 12px; overflow-y: auto; font-family: sans-serif; font-size: 0.85rem; margin-bottom: 8px;">
+                <div style="color: #64748b; text-align: center; margin-top: 130px;">Chưa kết nối...</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="messageInputA" class="form-control" placeholder="Nhắn gì đó..." disabled onkeypress="if(event.key === 'Enter') sendMessage('A')">
+                <button class="btn" id="btnSendA" onclick="sendMessage('A')" disabled style="background-color: #3b82f6;">Gửi</button>
+            </div>
+        </div>
+
+        <!-- CLIENT B -->
+        <div class="card" style="border: 2px solid #10b981;">
+            <h3 style="color: #10b981; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>👤 Client B</span>
+                <span id="statusB" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
+            </h3>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                <input type="text" id="tokenB" class="form-control" value="Bob" style="flex: 2;" placeholder="Nhập Token (Tên)...">
+                <input type="text" id="roomB" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button class="btn" style="background-color: #10b981; flex: 1;" id="btnConnectB" onclick="connectWs('B')">Kết nối</button>
+                <button class="btn" style="background-color: #ef4444; flex: 1; display: none;" id="btnDisconnectB" onclick="disconnectWs('B')">Ngắt kết nối</button>
+            </div>
+            
+            <div id="chatAreaB" style="height: 300px; background-color: #0f172a; border-radius: 8px; padding: 12px; overflow-y: auto; font-family: sans-serif; font-size: 0.85rem; margin-bottom: 8px;">
+                <div style="color: #64748b; text-align: center; margin-top: 130px;">Chưa kết nối...</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="messageInputB" class="form-control" placeholder="Nhắn gì đó..." disabled onkeypress="if(event.key === 'Enter') sendMessage('B')">
+                <button class="btn" id="btnSendB" onclick="sendMessage('B')" disabled style="background-color: #10b981;">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load thư viện SockJS và Stomp.js qua CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script>
+        const clients = {
+            'A': { client: null, room: null, username: null },
+            'B': { client: null, room: null, username: null }
+        };
+
+        function appendChat(clientId, sender, message, isSystem) {
+            const chatArea = document.getElementById('chatArea' + clientId);
+            if (chatArea.innerHTML.includes("Chưa kết nối...")) chatArea.innerHTML = "";
+            
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            let html = '';
+            if (isSystem) {
+                html = `<div style="text-align: center; color: #f59e0b; margin: 8px 0; font-size: 0.75rem;">--- ${message} ---</div>`;
+            } else {
+                const myUsername = clients[clientId].username;
+                const isMe = myUsername === sender;
+                const align = isMe ? 'right' : 'left';
+                const bg = isMe ? (clientId === 'A' ? '#2563eb' : '#059669') : '#334155';
+                html = `<div style="text-align: ${align}; margin-bottom: 8px;">
+                            <span style="font-size: 0.7rem; color: #94a3b8;">${sender} - ${time}</span><br/>
+                            <div style="display: inline-block; background-color: ${bg}; padding: 6px 12px; border-radius: 12px; max-width: 80%; text-align: left; word-break: break-word;">
+                                ${message}
+                            </div>
+                        </div>`;
+            }
+            chatArea.innerHTML += html;
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function connectWs(clientId) {
+            const token = document.getElementById('token' + clientId).value;
+            const room = document.getElementById('room' + clientId).value;
+            
+            if (!room) return alert("Vui lòng nhập Tên Room!");
+
+            clients[clientId].room = room;
+            
+            const socket = new SockJS('/ws');
+            const stompClient = Stomp.over(socket);
+            stompClient.debug = null; // Tắt log rác
+            clients[clientId].client = stompClient;
+
+            appendChat(clientId, 'System', 'Đang kết nối & Handshake...', true);
+            document.getElementById('status' + clientId).innerHTML = '🟡 Đang kết nối...';
+            document.getElementById('status' + clientId).style.color = '#f59e0b';
+
+            stompClient.connect({ 'Authorization': token }, function (frame) {
+                clients[clientId].username = frame.headers['user-name'] || "Unknown";
+
+                document.getElementById('btnConnect' + clientId).style.display = 'none';
+                document.getElementById('btnDisconnect' + clientId).style.display = 'block';
+                document.getElementById('messageInput' + clientId).disabled = false;
+                document.getElementById('btnSend' + clientId).disabled = false;
+                
+                document.getElementById('status' + clientId).innerHTML = '🟢 Online (' + clients[clientId].username + ')';
+                document.getElementById('status' + clientId).style.color = '#4ade80';
+
+                document.getElementById('chatArea' + clientId).innerHTML = '';
+                appendChat(clientId, 'System', `Kết nối thành công! Đã vào Room [${room}]`, true);
+
+                // Subscribe vào Room
+                stompClient.subscribe('/topic/room/' + room, function (payload) {
+                    const body = JSON.parse(payload.body);
+                    appendChat(clientId, body.sender, body.content, false);
+                });
+
+            }, function (error) {
+                appendChat(clientId, 'System', `Lỗi: ${error}`, true);
+                disconnectWs(clientId);
+            });
+        }
+
+        function disconnectWs(clientId) {
+            const stompClient = clients[clientId].client;
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            clients[clientId].client = null;
+            document.getElementById('btnConnect' + clientId).style.display = 'block';
+            document.getElementById('btnDisconnect' + clientId).style.display = 'none';
+            document.getElementById('messageInput' + clientId).disabled = true;
+            document.getElementById('btnSend' + clientId).disabled = true;
+            
+            document.getElementById('status' + clientId).innerHTML = '🔴 Offline';
+            document.getElementById('status' + clientId).style.color = '#94a3b8';
+            
+            appendChat(clientId, 'System', 'Đã ngắt kết nối an toàn!', true);
+        }
+
+        function sendMessage(clientId) {
+            const input = document.getElementById('messageInput' + clientId);
+            const content = input.value.trim();
+            const stompClient = clients[clientId].client;
+            const room = clients[clientId].room;
+            
+            if (content && stompClient) {
+                const chatMessage = {
+                    content: content,
+                    room: room,
+                    type: 'CHAT'
+                };
+                stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+                input.value = '';
+            }
+        }
+    </script>
+</div>
+</body>
+</html>
