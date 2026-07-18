@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: main(~{::#pageContent})}">
+<body>
+<div id="pageContent">
+    <div class="grid-2">
+        <!-- CRUD Section -->
+        <div class="card">
+            <h2>1. CRUD REST API</h2>
+            <div class="form-group">
+                <label>Method & Endpoint (Localhost:8080)</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="crudMethod" class="form-control" style="width: 100px;">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                    <input type="text" id="crudUrl" class="form-control" value="/api/v1/users">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>JSON Body (Cho POST/PUT/PATCH)</label>
+                <textarea id="crudBody" class="form-control" rows="4">{"name": "Alex", "email": "alex@example.com"}</textarea>
+            </div>
+            <button class="btn" onclick="callCrudApi()">Gửi Request</button>
+        </div>
+
+        <!-- Server-Sent Events -->
+        <div class="card">
+            <h2>2. Streaming (Server-Sent Events)</h2>
+            <p style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary);">
+                Mở kết nối SSE và hứng dữ liệu server trả về liên tục mỗi giây mà không đóng HTTP connection.
+            </p>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn" onclick="startSse()" id="btnSseStart">Bắt đầu SSE</button>
+                <button class="btn" onclick="stopSse()" id="btnSseStop" style="background-color: #ef4444; display: none;">Dừng SSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Output Console chung -->
+    <div class="card" style="margin-top: 24px;">
+        <h2>Kết quả Output (Console)</h2>
+        <div class="console-output" id="outputConsole">
+// Chờ thao tác của bạn...
+        </div>
+        <button class="btn" onclick="document.getElementById('outputConsole').innerHTML='// Chờ thao tác của bạn...\n'" style="margin-top: 12px; background-color: var(--border-color);">Xóa Log</button>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:fragment="main(content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - App Protocol Lab'">App Protocol Lab</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">AppProtocolLab</div>
+        <ul class="menu">
+            <li class="menu-item">
+                <a th:href="@{/phase1}" class="menu-link" th:classappend="${activeTab == 'phase1' ? 'active' : ''}">
+                    <span class="menu-icon">🌐</span> Phase 1: HTTP/REST
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link" th:classappend="${activeTab == 'phase2' ? 'active' : ''}">
+                    <span class="menu-icon">⚡</span> Phase 2: WebSocket
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#" class="menu-link" th:classappend="${activeTab == 'phase3' ? 'active' : ''}">
+                    <span class="menu-icon">🔌</span> Phase 3: Socket.IO
+                </a>
+            </li>
+            <!-- Thêm các Phase sau này vào đây -->
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="header">
+            <h1 th:text="${title}">Title</h1>
+        </header>
+
+        <div class="content-body">
+            <!-- Dynamic Content Injected Here -->
+            <div th:replace="${content}"></div>
+        </div>
+    </main>
+
+    <!-- JS -->
+    <script th:src="@{/js/main.js}"></script>
+</body>
+</html>
