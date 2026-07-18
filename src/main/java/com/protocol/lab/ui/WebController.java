@@ -22,4 +22,11 @@ public class WebController {
         model.addAttribute("activeTab", "phase2");
         return "phase2-websocket";
     }
+
+    @GetMapping("/phase3")
+    public String phase3(Model model) {
+        model.addAttribute("title", "Phase 3: Socket.IO");
+        model.addAttribute("activeTab", "phase3");
+        return "phase3-socketio";
+    }
 }

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: main(~{::#pageContent})}">
+<body>
+<div id="pageContent" class="fade-in">
+    <div style="margin-bottom: 24px;">
+        <h2>🌀 Phase 3: Socket.IO (The Auto-Fallback King)</h2>
+        <p style="font-size: 0.9rem; color: var(--text-secondary);">
+            Giao diện Test Socket.IO với tính năng Auto-Fallback kinh điển. Hãy mở F12 (Network tab) để xem request ban đầu là <strong>Polling</strong>, sau đó được tự động nâng cấp lên <strong>WebSocket (101)</strong>.
+        </p>
+    </div>
+
+    <!-- Container chia 2 cột -->
+    <div style="display: flex; gap: 24px;">
+        
+        <!-- ================= CLIENT A ================= -->
+        <div style="flex: 1; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+                👨‍💻 Client A 
+                <span id="statusA" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
+            </h3>
+            
+            <div style="margin-bottom: 8px;">
+                <label style="font-size: 0.8rem;">Giao thức kết nối (Transport):</label>
+                <select id="transportA" class="form-control" style="margin-bottom: 8px;">
+                    <option value="auto">Auto (Polling -> WebSocket)</option>
+                    <option value="polling">Ép buộc Long-Polling</option>
+                    <option value="websocket">Ép buộc WebSocket</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <input type="text" id="usernameA" class="form-control" value="Alex" style="flex: 1;" placeholder="Username">
+                <input type="text" id="roomA" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="btnConnectA" class="btn btn-primary" onclick="connectSocket('A')" style="flex: 1;">Kết nối</button>
+                <button id="btnDisconnectA" class="btn btn-danger" onclick="disconnectSocket('A')" style="flex: 1; display: none;">Ngắt kết nối</button>
+            </div>
+
+            <!-- Khung Chat -->
+            <div id="chatBoxA" style="flex: 1; min-height: 250px; background: #0f172a; border-radius: 6px; padding: 12px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; margin-bottom: 16px; border: 1px solid #334155;">
+                <div style="color: #64748b; text-align: center; margin-bottom: 8px;">--- Chờ kết nối ---</div>
+            </div>
+
+            <!-- Form Gửi -->
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="messageA" class="form-control" style="flex: 1;" placeholder="Nhập tin nhắn..." onkeypress="handleEnter(event, 'A')">
+                <button class="btn btn-primary" onclick="sendMessage('A')">Gửi</button>
+            </div>
+        </div>
+
+        <!-- ================= CLIENT B ================= -->
+        <div style="flex: 1; background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; flex-direction: column;">
+            <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center;">
+                👩‍💻 Client B 
+                <span id="statusB" style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Offline</span>
+            </h3>
+            
+            <div style="margin-bottom: 8px;">
+                <label style="font-size: 0.8rem;">Giao thức kết nối (Transport):</label>
+                <select id="transportB" class="form-control" style="margin-bottom: 8px;">
+                    <option value="auto">Auto (Polling -> WebSocket)</option>
+                    <option value="polling">Ép buộc Long-Polling</option>
+                    <option value="websocket">Ép buộc WebSocket</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <input type="text" id="usernameB" class="form-control" value="Bob" style="flex: 1;" placeholder="Username">
+                <input type="text" id="roomB" class="form-control" value="IT-ROOM" style="flex: 1;" placeholder="Tên Room">
+            </div>
+            <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                <button id="btnConnectB" class="btn btn-primary" onclick="connectSocket('B')" style="flex: 1; background-color: #10b981;">Kết nối</button>
+                <button id="btnDisconnectB" class="btn btn-danger" onclick="disconnectSocket('B')" style="flex: 1; display: none;">Ngắt kết nối</button>
+            </div>
+
+            <!-- Khung Chat -->
+            <div id="chatBoxB" style="flex: 1; min-height: 250px; background: #0f172a; border-radius: 6px; padding: 12px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; margin-bottom: 16px; border: 1px solid #334155;">
+                <div style="color: #64748b; text-align: center; margin-bottom: 8px;">--- Chờ kết nối ---</div>
+            </div>
+
+            <!-- Form Gửi -->
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="messageB" class="form-control" style="flex: 1;" placeholder="Nhập tin nhắn..." onkeypress="handleEnter(event, 'B')">
+                <button class="btn btn-primary" onclick="sendMessage('B')" style="background-color: #10b981;">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load thư viện Socket.IO qua CDN
+        const script = document.createElement('script');
+        script.src = "https://cdn.socket.io/4.7.5/socket.io.min.js";
+        document.head.appendChild(script);
+
+        script.onload = () => {
+            console.log("Socket.IO client library loaded.");
+        };
+
+        const clients = {
+            'A': { socket: null, username: null, room: null },
+            'B': { socket: null, username: null, room: null }
+        };
+
+        function appendLog(clientId, html) {
+            const chatBox = document.getElementById('chatBox' + clientId);
+            chatBox.innerHTML += `<div>${html}</div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function handleEnter(e, clientId) {
+            if (e.key === 'Enter') sendMessage(clientId);
+        }
+
+        function connectSocket(clientId) {
+            if (!window.io) return alert("Thư viện Socket.IO chưa load xong, vui lòng chờ giây lát!");
+
+            const username = document.getElementById('username' + clientId).value;
+            const room = document.getElementById('room' + clientId).value;
+            const transportMode = document.getElementById('transport' + clientId).value;
+            
+            if (!username || !room) return alert("Vui lòng nhập đủ Username và Tên Room!");
+
+            clients[clientId].username = username;
+            clients[clientId].room = room;
+
+            document.getElementById('status' + clientId).innerHTML = '🟡 Đang kết nối...';
+            document.getElementById('status' + clientId).style.color = '#f59e0b';
+            document.getElementById('chatBox' + clientId).innerHTML = '';
+
+            // Cấu hình Transport
+            let transports = ["polling", "websocket"];
+            if (transportMode === 'polling') transports = ["polling"];
+            if (transportMode === 'websocket') transports = ["websocket"];
+
+            // Khởi tạo Socket.IO kết nối đến Netty port 8085
+            const socket = io("http://localhost:8085", {
+                query: { token: username },
+                transports: transports,
+                reconnectionAttempts: 5
+            });
+
+            clients[clientId].socket = socket;
+
+            // Sự kiện Connect
+            socket.on("connect", () => {
+                document.getElementById('status' + clientId).innerHTML = `🟢 Online (${socket.io.engine.transport.name})`;
+                document.getElementById('status' + clientId).style.color = '#10b981';
+                
+                document.getElementById('btnConnect' + clientId).style.display = 'none';
+                document.getElementById('btnDisconnect' + clientId).style.display = 'block';
+                
+                appendLog(clientId, `<span style="color: #10b981;">[HỆ THỐNG]</span> Đã kết nối với Socket ID: ${socket.id}`);
+                
+                // Lắng nghe sự kiện upgrade transport (để thấy cảnh fallback)
+                socket.io.engine.on("upgrade", () => {
+                    const newTransport = socket.io.engine.transport.name;
+                    document.getElementById('status' + clientId).innerHTML = `🟢 Online (${newTransport})`;
+                    appendLog(clientId, `<span style="color: #f59e0b;">[HỆ THỐNG]</span> 🔄 Nâng cấp giao thức thành công: ${newTransport}`);
+                });
+
+                // Gửi yêu cầu Join Room
+                socket.emit("join_room", room);
+                appendLog(clientId, `<span style="color: #3b82f6;">[HỆ THỐNG]</span> Đã join phòng: ${room}`);
+            });
+
+            // Sự kiện ngắt kết nối
+            socket.on("disconnect", (reason) => {
+                document.getElementById('status' + clientId).innerHTML = '🔴 Offline';
+                document.getElementById('status' + clientId).style.color = '#ef4444';
+                
+                document.getElementById('btnConnect' + clientId).style.display = 'block';
+                document.getElementById('btnDisconnect' + clientId).style.display = 'none';
+                
+                appendLog(clientId, `<span style="color: #ef4444;">[HỆ THỐNG]</span> Đã ngắt kết nối (${reason})`);
+            });
+
+            // Nhận tin nhắn
+            socket.on("chat_message", (data) => {
+                const isMe = data.sender === clients[clientId].username;
+                const color = isMe ? '#a78bfa' : '#38bdf8';
+                appendLog(clientId, `<span style="color: ${color};">[${data.sender}]:</span> <span style="color: #f8fafc;">${data.content}</span>`);
+            });
+        }
+
+        function disconnectSocket(clientId) {
+            if (clients[clientId].socket) {
+                clients[clientId].socket.disconnect();
+            }
+        }
+
+        function sendMessage(clientId) {
+            const socket = clients[clientId].socket;
+            const msgInput = document.getElementById('message' + clientId);
+            const content = msgInput.value.trim();
+
+            if (content && socket && socket.connected) {
+                const data = {
+                    room: clients[clientId].room,
+                    content: content,
+                    sender: clients[clientId].username
+                };
+                
+                socket.emit("chat_message", data);
+                msgInput.value = '';
+            }
+        }
+    </script>
+</div>
+</body>
+</html>
