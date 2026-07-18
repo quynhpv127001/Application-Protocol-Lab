@@ -1,3 +1,14 @@
+// Hàm escape HTML để hiển thị an toàn
+function escapeHtml(unsafe) {
+    if (unsafe == null) return "";
+    return unsafe.toString()
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
 // Hàm ghi log ra giao diện
 function logToConsole(message, type = 'info') {
     const consoleDiv = document.getElementById('outputConsole');
@@ -7,7 +18,11 @@ function logToConsole(message, type = 'info') {
     if (type === 'error') color = '#ef4444'; // đỏ
     if (type === 'warn') color = '#fbbf24'; // vàng
 
-    const logLine = `<div style="color: ${color}; margin-bottom: 4px;">[${time}] ${message}</div>`;
+    const escapedMessage = escapeHtml(message);
+    const logLine = `<div style="color: ${color}; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed #334155;">
+        <span style="color: #94a3b8; font-size: 0.75rem;">[${time}]</span>
+        <pre style="margin: 4px 0 0 0; white-space: pre-wrap; font-family: inherit;">${escapedMessage}</pre>
+    </div>`;
     consoleDiv.innerHTML += logLine;
     consoleDiv.scrollTop = consoleDiv.scrollHeight;
 }
