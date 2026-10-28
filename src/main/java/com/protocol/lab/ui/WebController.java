@@ -36,4 +36,11 @@ public class WebController {
         model.addAttribute("activeTab", "phase4");
         return "phase4-graphql";
     }
+
+    @GetMapping("/phase5")
+    public String phase5(Model model) {
+        model.addAttribute("title", "Phase 5: gRPC");
+        model.addAttribute("activeTab", "phase5");
+        return "phase5-grpc";
+    }
 }

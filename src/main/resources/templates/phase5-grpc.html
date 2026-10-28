@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: main(~{::#pageContent})}">
+<body>
+<div id="pageContent" class="fade-in">
+
+    <!-- Header Section -->
+    <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: #f8fafc;">
+                ⚡ Phase 5: gRPC & Protocol Buffers (High-Performance Microservices)
+            </h2>
+            <p style="font-size: 0.9rem; color: #94a3b8; max-width: 850px; line-height: 1.5;">
+                gRPC là chuẩn giao tiếp Microservices tốc độ cao sử dụng HTTP/2 đa kênh (Multiplexing) và nhị phân hóa qua Protocol Buffers (.proto). 
+                Module này triển khai đủ <strong>4 mô hình Streaming</strong>, cơ chế kiểm soát <strong>Deadlines / Cancellation</strong>, 
+                và <strong>Trace Interceptor</strong> (Header <code>x-trace-id</code>).
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 6px; color: #4ade80; font-weight: 600; font-size: 0.85rem;">
+                🟢 gRPC Server Port: 9090
+            </span>
+        </div>
+    </div>
+
+    <!-- Architecture Callout -->
+    <div style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;">
+        <span style="font-size: 1.8rem;">⚙️</span>
+        <div style="font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;">
+            <strong style="color: #38bdf8;">The Backend Engineer Way:</strong> Kiểm soát tài nguyên bằng <code>Context.current().isCancelled()</code> khi Client vượt ngưỡng Deadline timeout; tự động gắn định danh <code>x-trace-id</code> xuyên suốt các lời gọi phân tán qua <code>LogAndTraceServerInterceptor</code>.
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px;">
+
+        <!-- ================= PANEL TRÁI: SIMULATOR & TESTER ================= -->
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin: 0;">🎮 gRPC RPC Simulator</h3>
+                <span id="rpcStatus" style="font-size: 0.75rem; color: #94a3b8;">Sẵn sàng</span>
+            </div>
+
+            <!-- RPC Model Selector -->
+            <div>
+                <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 6px;">Chọn phương thức RPC:</label>
+                <select id="rpcModel" class="form-control" style="background: #0f172a; border: 1px solid #334155; color: #f8fafc; padding: 8px 12px; border-radius: 6px; width: 100%; font-size: 0.85rem;" onchange="loadRpcPreset()">
+                    <option value="unary">1. Unary RPC: CreateOrder (1 Request -> 1 Response)</option>
+                    <option value="serverStream">2. Server Streaming: StreamOrdersByCustomer (1 Req -> Stream Res)</option>
+                    <option value="clientStream">3. Client Streaming: RecordTelemetry (Stream Req -> 1 Res)</option>
+                    <option value="bidiStream">4. Bi-directional Streaming: LiveDeliveryChannel (Full-duplex)</option>
+                    <option value="deadlines">5. Deadlines & Timeout: ProcessHeavyOrder (Demo hủy ngang)</option>
+                </select>
+            </div>
+
+            <!-- Parameters Input Box -->
+            <div>
+                <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px;">Payload Request (Protobuf JSON equivalent):</label>
+                <textarea id="rpcPayload" style="width: 100%; height: 160px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #e2e8f0; font-family: 'Fira Code', monospace; font-size: 0.85rem; padding: 10px; resize: vertical; box-sizing: border-box;"></textarea>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button type="button" onclick="executeRpc()" style="background: #0284c7; color: white; border: none; padding: 10px 18px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    ▶️ Gọi RPC
+                </button>
+                <button type="button" onclick="clearRpcLogs()" style="background: #334155; color: #cbd5e1; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">
+                    Xóa Log
+                </button>
+            </div>
+
+            <!-- grpcurl Ready Command Box -->
+            <div>
+                <label style="font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 4px;">Lệnh CLI chạy ngay (grpcurl):</label>
+                <div style="position: relative;">
+                    <pre id="grpcurlCommand" style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; font-family: 'Fira Code', monospace; font-size: 0.78rem; color: #38bdf8; overflow-x: auto; margin: 0; white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PANEL PHẢI: CONSOLE & RESPONSES ================= -->
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 1.05rem; font-weight: 600; color: #f8fafc; margin: 0;">📟 Live gRPC Traffic & Response</h3>
+                <span id="responseStatus" style="font-size: 0.75rem; color: #38bdf8; font-family: monospace;">STATUS: OK (0)</span>
+            </div>
+
+            <!-- Response Viewer -->
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div id="grpcConsole" style="height: 380px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: #e2e8f0; overflow-y: auto; white-space: pre-wrap; line-height: 1.4;">
+// Kết quả gọi gRPC sẽ hiển thị tại đây...
+// Hệ thống hỗ trợ mô phỏng trực tiếp trên giao diện và cung cấp mã grpcurl để kiểm thử từ Terminal.
+                </div>
+            </div>
+
+            <!-- Protocol Buffers Schema Quickview -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <span style="font-size: 0.75rem; color: #94a3b8;">IDL Contract: <code>order_service.proto</code></span>
+                    <span style="font-size: 0.75rem; color: #64748b;">Package: com.protocol.lab.p5_grpc</span>
+                </div>
+                <pre style="background: #090d16; border: 1px solid #1e293b; border-radius: 6px; padding: 8px; font-family: 'Fira Code', monospace; font-size: 0.72rem; color: #a5b4fc; overflow-x: auto; margin: 0; max-height: 120px;">
+service OrderGrpcService {
+    rpc CreateOrder (CreateOrderRequest) returns (OrderResponse);
+    rpc StreamOrdersByCustomer (CustomerOrdersRequest) returns (stream OrderResponse);
+    rpc RecordTelemetry (stream TelemetryPoint) returns (TelemetrySummary);
+    rpc LiveDeliveryChannel (stream DeliveryEvent) returns (stream DeliveryEvent);
+    rpc ProcessHeavyOrder (OrderIdRequest) returns (OrderResponse);
+}</pre>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Script logic -->
+    <script>
+        const PRESETS = {
+            unary: {
+                payload: JSON.stringify({
+                    customerId: "CUST-8888",
+                    itemSku: "SERVER-BLADE-GEN11",
+                    quantity: 4,
+                    price: 2499.50
+                }, null, 2),
+                cmd: 'grpcurl -plaintext -d \'{"customerId":"CUST-8888","itemSku":"SERVER-BLADE-GEN11","quantity":4,"price":2499.50}\' localhost:9090 com.protocol.lab.p5_grpc.generated.OrderGrpcService/CreateOrder'
+            },
+            serverStream: {
+                payload: JSON.stringify({
+                    customerId: "CUST-8888"
+                }, null, 2),
+                cmd: 'grpcurl -plaintext -d \'{"customerId":"CUST-8888"}\' localhost:9090 com.protocol.lab.p5_grpc.generated.OrderGrpcService/StreamOrdersByCustomer'
+            },
+            clientStream: {
+                payload: JSON.stringify([
+                    { orderId: "ORD-1001", latitude: 21.0285, longitude: 105.8542, speedKmh: 42.5 },
+                    { orderId: "ORD-1001", latitude: 21.0310, longitude: 105.8570, speedKmh: 48.0 },
+                    { orderId: "ORD-1001", latitude: 21.0350, longitude: 105.8610, speedKmh: 55.2 }
+                ], null, 2),
+                cmd: 'grpcurl -plaintext -d \'{"orderId":"ORD-1001","latitude":21.0285,"longitude":105.8542,"speedKmh":42.5}\' localhost:9090 com.protocol.lab.p5_grpc.generated.OrderGrpcService/RecordTelemetry'
+            },
+            bidiStream: {
+                payload: JSON.stringify({
+                    orderId: "ORD-1001",
+                    sender: "COURIER_DEVICE_01",
+                    payload: "Courier arrived at hub station"
+                }, null, 2),
+                cmd: 'grpcurl -plaintext -d \'{"orderId":"ORD-1001","sender":"COURIER_01","payload":"Dispatched"}\' localhost:9090 com.protocol.lab.p5_grpc.generated.OrderGrpcService/LiveDeliveryChannel'
+            },
+            deadlines: {
+                payload: JSON.stringify({
+                    orderId: "ORD-HEAVY-999",
+                    deadlineMs: 200
+                }, null, 2),
+                cmd: 'grpcurl -plaintext -max-time 0.2 -d \'{"orderId":"ORD-HEAVY-999"}\' localhost:9090 com.protocol.lab.p5_grpc.generated.OrderGrpcService/ProcessHeavyOrder'
+            }
+        };
+
+        function loadRpcPreset() {
+            const key = document.getElementById('rpcModel').value;
+            const data = PRESETS[key];
+            if (data) {
+                document.getElementById('rpcPayload').value = data.payload;
+                document.getElementById('grpcurlCommand').textContent = data.cmd;
+            }
+        }
+
+        function clearRpcLogs() {
+            document.getElementById('grpcConsole').textContent = "// Log đã được làm sạch.";
+            document.getElementById('responseStatus').textContent = "STATUS: IDLE";
+        }
+
+        function executeRpc() {
+            const model = document.getElementById('rpcModel').value;
+            const payload = document.getElementById('rpcPayload').value;
+            const consoleBox = document.getElementById('grpcConsole');
+            const statusBox = document.getElementById('responseStatus');
+
+            const traceId = 'tr-' + Math.random().toString(36).substring(2, 9);
+            consoleBox.textContent = `[Client Outbound] Invoking RPC: ${model.toUpperCase()}\n`;
+            consoleBox.textContent += `[gRPC Metadata] x-trace-id: ${traceId}\n`;
+            consoleBox.textContent += `[Payload]:\n${payload}\n\n`;
+
+            statusBox.textContent = "CALLING...";
+            statusBox.style.color = "#f59e0b";
+
+            setTimeout(() => {
+                if (model === 'deadlines') {
+                    statusBox.textContent = "STATUS: DEADLINE_EXCEEDED (4)";
+                    statusBox.style.color = "#ef4444";
+                    consoleBox.textContent += `[gRPC Server Response]:\n`;
+                    consoleBox.textContent += `Error: StatusRuntimeException: DEADLINE_EXCEEDED\n`;
+                    consoleBox.textContent += `Description: Processing aborted due to client deadline exceeded (Context.current().isCancelled() triggered)\n`;
+                    consoleBox.textContent += `[Trace]: Interceptor recorded call closure with CANCELLED status.`;
+                } else if (model === 'unary') {
+                    statusBox.textContent = "STATUS: OK (0)";
+                    statusBox.style.color = "#22c55e";
+                    consoleBox.textContent += `[gRPC Server Response] (200 OK / Status 0):\n`;
+                    consoleBox.textContent += JSON.stringify({
+                        orderId: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+                        customerId: "CUST-8888",
+                        itemSku: "SERVER-BLADE-GEN11",
+                        quantity: 4,
+                        totalAmount: 9998.0,
+                        status: "CREATED",
+                        createdAt: new Date().toISOString()
+                    }, null, 2);
+                } else if (model === 'serverStream') {
+                    statusBox.textContent = "STATUS: STREAMING COMPLETED (0)";
+                    statusBox.style.color = "#22c55e";
+                    consoleBox.textContent += `[Stream Packet #1]: Order ORD-1001 (CREATED)\n`;
+                    consoleBox.textContent += `[Stream Packet #2]: Order ORD-1002 (PROCESSING)\n`;
+                    consoleBox.textContent += `[Stream Packet #3]: Order ORD-1003 (DELIVERED)\n`;
+                    consoleBox.textContent += `[Stream Closed]: Server emitted onCompleted() cleanly.`;
+                } else {
+                    statusBox.textContent = "STATUS: OK (0)";
+                    statusBox.style.color = "#22c55e";
+                    consoleBox.textContent += `[gRPC Response Received Successfully]: Channel active, 0 packet loss.`;
+                }
+            }, 300);
+        }
+
+        // Khởi tạo ban đầu
+        loadRpcPreset();
+    </script>
+</div>
+</body>
+</html>

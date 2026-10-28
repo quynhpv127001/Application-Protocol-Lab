@@ -84,8 +84,8 @@ Các module dưới đây được sắp xếp theo mức độ phổ biến gi�
     - [x] **Error Handling**: Mapping StatusRuntimeException.
     - [x] **Deadlines/Timeouts**: Cấu hình gRPC Deadlines.
     - [x] **Interceptors**: Tạo gRPC Interceptor (Auth/Logging).
-- [ ] **5.5 Hoàn thiện Module**: Test & `README.md` (kèm lệnh `grpcurl` mẫu và raw JSON body để gọi hàm).
-- [ ] **5.6 Giao diện UI**: Tích hợp tab gRPC, mô phỏng gọi API.
+- [x] **5.5 Hoàn thiện Module**: Test & `README.md` (kèm lệnh `grpcurl` mẫu và raw JSON body để gọi hàm).
+- [x] **5.6 Giao diện UI**: Tích hợp tab gRPC, mô phỏng gọi API.
 
 ---
 
