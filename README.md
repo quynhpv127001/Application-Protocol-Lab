@@ -30,3 +30,6 @@ Hệ thống lab chuẩn hóa các mô hình giao tiếp Application-to-Applicat
 
 * Chi tiết các payload mẫu và lệnh kiểm thử (cURL, grpcurl, netcat `nc`, Postman Native, raw JSON-RPC) được đặt trực tiếp trong file doc kỹ thuật của từng module (vd: `socket.md`, `mqtt.md`, `grpc.md`).
 * Giao diện tương tác trực quan (Web UI Dashboard) sẵn sàng tại `http://localhost:8080/` cho tất cả các giao thức đã hoàn thiện.
+
+ ---
+ 
